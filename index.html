@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gra: Rozwiąż układ równań</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.css">
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+        #editor { width: 400px; height: 150px; margin: 0 auto; border: 1px solid #ccc; }
+        button { margin: 10px; padding: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h2>Rozwiąż układ równań</h2>
+    <textarea id="editor"></textarea>
+    <br>
+    <button onclick="checkSolution()">Sprawdź</button>
+    <button onclick="skipEquation()">Skip</button>
+    <p id="message"></p>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.js"></script>
+    <script>
+        const equations = [
+            { eq: "x + y = 4\n2x - y = 1", solution: {x: 1, y: 3} },
+            { eq: "3a - b = 5\n2a + b = 7", solution: {a: 3, b: 4} },
+            { eq: "x - y = 2\n2x + 3y = 12", solution: {x: 4, y: 2} }
+        ];
+        
+        let currentEquation = {};
+        let editor = CodeMirror.fromTextArea(document.getElementById("editor"), {
+            lineNumbers: true,
+            mode: "text/x-python",
+            theme: "default"
+        });
+        
+        function loadEquation() {
+            currentEquation = equations[Math.floor(Math.random() * equations.length)];
+            editor.setValue(currentEquation.eq);
+            document.getElementById("message").innerText = "";
+        }
+        
+        function checkSolution() {
+            let userInput = editor.getValue().trim().toLowerCase();
+            if (userInput.includes("skip")) {
+                skipEquation();
+                return;
+            }
+            
+            let correct = Object.entries(currentEquation.solution).every(([key, value]) =>
+                userInput.includes(`${key} = ${value}`)
+            );
+            
+            if (correct) {
+                document.getElementById("message").innerText = "🎉 Gratulacje! Poprawne rozwiązanie.";
+            }
+        }
+        
+        function skipEquation() {
+            loadEquation();
+        }
+        
+        loadEquation();
+    </script>
+</body>
+</html>
