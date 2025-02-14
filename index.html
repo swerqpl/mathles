@@ -10,6 +10,16 @@ const parseFraction = (input) => {
   return parseFloat(input);
 };
 
+const highlightEquation = (equation, darkMode) => {
+  return equation.split("").map((char, index) => {
+    if (/[xy]/.test(char)) return <span key={index} style={{ color: "blue" }}>{char}</span>;
+    if (/[-]/.test(char)) return <span key={index} style={{ color: "red" }}>{char}</span>;
+    if (/[+:*]/.test(char)) return <span key={index} style={{ color: "green" }}>{char}</span>;
+    if (/[\/]/.test(char)) return <span key={index} style={{ color: "orange" }}>{char}</span>;
+    return char;
+  });
+};
+
 const generateEquation = (difficulty) => {
   let a, b, c, d, x, y;
   switch (difficulty) {
@@ -76,29 +86,31 @@ export default function EquationSolver() {
   };
 
   return (
-    <div className={darkMode ? "bg-gray-800 text-white" : "bg-white text-black"}>
-      <div className="p-4 flex justify-between">
+    <div className={`h-screen w-screen flex flex-col items-center justify-center ${darkMode ? "bg-gray-800 text-white" : "bg-white text-black"}`}>
+      <div className="p-4 flex justify-between w-full">
         <h1 className="text-2xl">Rozwiąż układ równań</h1>
         <button onClick={() => setDarkMode(!darkMode)}>Tryb Ciemny</button>
       </div>
-      <Card>
+      <Card className="w-full max-w-4xl p-4">
         <CardContent>
-          <p>{equation.eq1}</p>
-          {equation.eq2 && <p>{equation.eq2}</p>}
+          <p>{highlightEquation(equation.eq1, darkMode)}</p>
+          {equation.eq2 && <p>{highlightEquation(equation.eq2, darkMode)}</p>}
           <input
             type="text"
+            className="w-full p-2 text-lg border-2 rounded-lg bg-transparent text-current"
             placeholder="x (np. 3/4)"
             value={userX}
             onChange={(e) => setUserX(e.target.value)}
           />
           <input
             type="text"
+            className="w-full p-2 text-lg border-2 rounded-lg bg-transparent text-current mt-2"
             placeholder="y (np. 2 1/2)"
             value={userY}
             onChange={(e) => setUserY(e.target.value)}
           />
-          <Button onClick={checkSolution}>Sprawdź</Button>
-          <Button onClick={nextEquation}>Skip</Button>
+          <Button onClick={checkSolution} className="m-2">Sprawdź</Button>
+          <Button onClick={nextEquation} className="m-2">Skip</Button>
         </CardContent>
       </Card>
       <p>Punkty: {score}</p>
