@@ -1,187 +1,114 @@
-<!DOCTYPE html>
-<html lang="pl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gra: Rozwiąż układ równań</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/javascript/javascript.min.js"></script>
-    <style>
-        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; transition: background 0.3s, color 0.3s; }
-        #editor { width: 400px; height: 150px; margin: 0 auto; border: 1px solid #ccc; }
-        button { margin: 10px; padding: 10px; cursor: pointer; }
-        #timer, #score { font-size: 18px; margin-top: 10px; }
-        .dark-mode { background: #121212; color: white; }
-        .dark-mode button { background: #333; color: white; border: 1px solid white; }
-        .dark-mode #editor { border: 1px solid white; }
-    </style>
-</head>
-<body>
-    <h2>Rozwiąż układ równań</h2>
+import React, { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 
-    <!-- Wybór poziomu trudności -->
-    <label for="difficulty">Wybierz poziom trudności:</label>
-    <select id="difficulty">
-        <option value="easy">Łatwy</option>
-        <option value="medium">Średni</option>
-        <option value="hard">Trudny</option>
-    </select>
-    <br>
+const parseFraction = (input) => {
+  if (input.includes("/")) {
+    const [num, den] = input.split("/").map(Number);
+    return num / den;
+  }
+  return parseFloat(input);
+};
 
-    <!-- Przełącznik trybu ciemnego -->
-    <button onclick="toggleDarkMode()">🌙 Tryb Ciemny</button>
-    <br>
+const generateEquation = (difficulty) => {
+  let a, b, c, d, x, y;
+  switch (difficulty) {
+    case "easy":
+      x = Math.floor(Math.random() * 10);
+      y = Math.floor(Math.random() * 10);
+      return { eq1: `x + y = ${x + y}`, solution: { x, y } };
+    case "medium":
+      a = Math.floor(Math.random() * 10) + 1;
+      b = Math.floor(Math.random() * 10) + 1;
+      x = (Math.random() * 10).toFixed(1);
+      y = (Math.random() * 10).toFixed(1);
+      return { eq1: `${a}x + ${b}y = ${a * x + b * y}`, solution: { x, y } };
+    case "hard":
+      a = Math.floor(Math.random() * 20) - 10;
+      b = Math.floor(Math.random() * 20) - 10;
+      c = Math.floor(Math.random() * 20) - 10;
+      d = Math.floor(Math.random() * 20) - 10;
+      x = (Math.random() * 20 - 10).toFixed(2);
+      y = (Math.random() * 20 - 10).toFixed(2);
+      return {
+        eq1: `${a}x + ${b}y = ${a * x + b * y}`,
+        eq2: `${c}x + ${d}y = ${c * x + d * y}`,
+        solution: { x, y },
+      };
+    default:
+      return {};
+  }
+};
 
-    <!-- Układ równań i edytor -->
-    <p id="timer">Czas: 0s</p>
-    <p id="score">Wynik: 0</p>
-    <textarea id="editor"></textarea>
-    <br>
-    <button id="checkBtn" onclick="checkSolution()">Sprawdź</button>
-    <button id="skipBtn" onclick="skipEquation()">Skip</button>
-    <button id="continueBtn" onclick="loadEquation()" style="display: none;">Kontynuuj</button>
-    <p id="message"></p>
-    <br>
+export default function EquationSolver() {
+  const [difficulty, setDifficulty] = useState("easy");
+  const [equation, setEquation] = useState(generateEquation("easy"));
+  const [userX, setUserX] = useState("");
+  const [userY, setUserY] = useState("");
+  const [score, setScore] = useState(0);
+  const [message, setMessage] = useState("");
+  const [darkMode, setDarkMode] = useState(false);
+  const [time, setTime] = useState(0);
 
-    <script>
-        // Funkcja do zmiany trybu ciemnego
-        function toggleDarkMode() {
-            document.body.classList.toggle('dark-mode');
-        }
+  useEffect(() => {
+    const timer = setInterval(() => setTime((t) => t + 1), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
-        // Funkcja generująca losowe równania
-        function generateEquation(difficulty) {
-            let eq = "";
-            let solution = {};
+  const checkSolution = () => {
+    if (
+      parseFraction(userX) === parseFloat(equation.solution.x) &&
+      parseFraction(userY) === parseFloat(equation.solution.y)
+    ) {
+      setScore(score + 1);
+      setMessage("Gratulacje! Poprawne rozwiązanie.");
+    } else {
+      setMessage("Niepoprawne rozwiązanie. Spróbuj ponownie.");
+    }
+  };
 
-            if (difficulty === "easy") {
-                // Łatwe równania (wynik zawsze całkowity)
-                let e = Math.floor(Math.random() * 10) + 1;
-                let f = Math.floor(Math.random() * 10) + 1;
-                let g = Math.floor(Math.random() * 10) + 1;
-                let randomType = Math.floor(Math.random() * 2);
+  const nextEquation = () => {
+    setEquation(generateEquation(difficulty));
+    setUserX("");
+    setUserY("");
+    setMessage("");
+    setTime(0);
+  };
 
-                if (randomType === 0) {
-                    // Typ 1: x + y = e
-                    eq = `x + y = ${e}\n${f}x + y = ${g}`;
-                    solution = { x: e - g, y: g - f * (e - g) };
-                } else {
-                    // Typ 2: fx + y = g
-                    eq = `${f}x + y = ${g}\nx + y = ${e}`;
-                    solution = { x: (g - e) / (f - 1), y: e - (g - e) / (f - 1) };
-                }
-
-            } else if (difficulty === "medium") {
-                // Średnie równania (wynik może być ułamkiem)
-                let a = Math.floor(Math.random() * 5) + 1;
-                let b = Math.floor(Math.random() * 5) + 1;
-                let c = Math.floor(Math.random() * 5) + 1;
-                let d = Math.floor(Math.random() * 5) + 1;
-                let randomType = Math.floor(Math.random() * 3);
-
-                if (randomType === 0) {
-                    // Typ 1: a*x + b*y = c, d*x - y = e
-                    eq = `${a}x + ${b}y = ${c}\n${d}x - y = ${e}`;
-                    solution = { x: (c - b) / a, y: (e - a) / d };
-                } else if (randomType === 1) {
-                    // Typ 2: a*x + b*y = c, x + y = e
-                    eq = `${a}x + ${b}y = ${c}\nx + y = ${e}`;
-                    solution = { x: (e - c) / (a - b), y: (c - b) / a };
-                } else {
-                    // Typ 3: fx - y = c, ax + b = e
-                    eq = `${f}x - y = ${c}\n${a}x + ${b} = ${e}`;
-                    solution = { x: (e - b) / a, y: c - f * (e - b) / a };
-                }
-
-            } else if (difficulty === "hard") {
-                // Trudne równania (bardziej złożone)
-                let a = Math.floor(Math.random() * 10) + 1;
-                let b = Math.floor(Math.random() * 10) + 1;
-                let c = Math.floor(Math.random() * 10) + 1;
-                let d = Math.floor(Math.random() * 10) + 1;
-                let randomType = Math.floor(Math.random() * 3);
-
-                if (randomType === 0) {
-                    // Typ 1: ax + by = c, dx + ey = f
-                    eq = `${a}x + ${b}y = ${c}\n${d}x + ${e}y = ${f}`;
-                    solution = { x: (f - e * c / b) / (d - e * a / b), y: (c - a * (f - e * c / b) / (d - e * a / b)) / b };
-                } else if (randomType === 1) {
-                    // Typ 2: ax + b = c, dx + e = f
-                    eq = `${a}x + ${b} = ${c}\n${d}x + ${e} = ${f}`;
-                    solution = { x: (f - e) / d, y: (c - a) / b };
-                } else {
-                    // Typ 3: fx - y = g, ax + b = e
-                    eq = `${f}x - y = ${g}\n${a}x + ${b} = ${e}`;
-                    solution = { x: (e - b) / a, y: g - f * (e - b) / a };
-                }
-            }
-
-            return { eq, solution };
-        }
-
-        // Funkcja uruchamiająca czas
-        let time = 0;
-        let timerInterval;
-        let editor = CodeMirror.fromTextArea(document.getElementById("editor"), {
-            lineNumbers: true,
-            mode: "javascript",
-            theme: "default"
-        });
-
-        function startTimer() {
-            clearInterval(timerInterval);
-            time = 0;
-            document.getElementById("timer").innerText = `Czas: ${time}s`;
-            timerInterval = setInterval(() => {
-                time++;
-                document.getElementById("timer").innerText = `Czas: ${time}s`;
-            }, 1000);
-        }
-
-        // Ładowanie nowego układu równań
-        function loadEquation() {
-            const difficulty = document.getElementById("difficulty").value;
-            const equationData = generateEquation(difficulty);
-            currentEquation = equationData;
-            editor.setValue(equationData.eq);
-            document.getElementById("message").innerText = "";
-            document.getElementById("continueBtn").style.display = "none";
-            document.getElementById("checkBtn").style.display = "inline-block";
-            document.getElementById("skipBtn").style.display = "inline-block";
-            startTimer();
-        }
-
-        // Sprawdzanie rozwiązania
-        function checkSolution() {
-            let userInput = editor.getValue().trim().toLowerCase();
-            if (userInput.includes("skip")) {
-                skipEquation();
-                return;
-            }
-
-            let correct = Object.entries(currentEquation.solution).every(([key, value]) =>
-                userInput.includes(`${key} = ${value}`)
-            );
-
-            if (correct) {
-                clearInterval(timerInterval);
-                score++;
-                document.getElementById("score").innerText = `Wynik: ${score}`;
-                document.getElementById("message").innerText = "🎉 Gratulacje! Poprawne rozwiązanie.";
-                document.getElementById("continueBtn").style.display = "inline-block";
-                document.getElementById("checkBtn").style.display = "none";
-                document.getElementById("skipBtn").style.display = "none";
-            }
-        }
-
-        // Pomiń równanie
-        function skipEquation() {
-            loadEquation();
-        }
-
-        let currentEquation = {};
-        let score = 0;
-        loadEquation();
-    </script>
-</body>
-</html>
+  return (
+    <div className={darkMode ? "bg-gray-800 text-white" : "bg-white text-black"}>
+      <div className="p-4 flex justify-between">
+        <h1 className="text-2xl">Rozwiąż układ równań</h1>
+        <button onClick={() => setDarkMode(!darkMode)}>Tryb Ciemny</button>
+      </div>
+      <Card>
+        <CardContent>
+          <p>{equation.eq1}</p>
+          {equation.eq2 && <p>{equation.eq2}</p>}
+          <input
+            type="text"
+            placeholder="x (np. 3/4)"
+            value={userX}
+            onChange={(e) => setUserX(e.target.value)}
+          />
+          <input
+            type="text"
+            placeholder="y (np. 2 1/2)"
+            value={userY}
+            onChange={(e) => setUserY(e.target.value)}
+          />
+          <Button onClick={checkSolution}>Sprawdź</Button>
+          <Button onClick={nextEquation}>Skip</Button>
+        </CardContent>
+      </Card>
+      <p>Punkty: {score}</p>
+      <p>Czas: {time}s</p>
+      <p>{message}</p>
+      <div>
+        <Button onClick={() => setDifficulty("easy")} className="m-1">Łatwy</Button>
+        <Button onClick={() => setDifficulty("medium")} className="m-1">Średni</Button>
+        <Button onClick={() => setDifficulty("hard")} className="m-1">Trudny</Button>
+      </div>
+    </div>
+  );
+}
