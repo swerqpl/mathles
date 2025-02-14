@@ -9,10 +9,14 @@
         body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
         #editor { width: 400px; height: 150px; margin: 0 auto; border: 1px solid #ccc; }
         button { margin: 10px; padding: 10px; cursor: pointer; display: none; }
+        #timer { font-size: 18px; margin-top: 10px; }
+        #score { font-size: 18px; margin-top: 10px; }
     </style>
 </head>
 <body>
     <h2>Rozwiąż układ równań</h2>
+    <p id="timer">Czas: 0s</p>
+    <p id="score">Wynik: 0</p>
     <textarea id="editor"></textarea>
     <br>
     <button id="checkBtn" onclick="checkSolution()">Sprawdź</button>
@@ -30,11 +34,25 @@
         ];
         
         let currentEquation = {};
+        let score = 0;
+        let time = 0;
+        let timerInterval;
+
         let editor = CodeMirror.fromTextArea(document.getElementById("editor"), {
             lineNumbers: true,
             mode: "javascript",
             theme: "default"
         });
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            time = 0;
+            document.getElementById("timer").innerText = `Czas: ${time}s`;
+            timerInterval = setInterval(() => {
+                time++;
+                document.getElementById("timer").innerText = `Czas: ${time}s`;
+            }, 1000);
+        }
         
         function loadEquation() {
             currentEquation = equations[Math.floor(Math.random() * equations.length)];
@@ -43,6 +61,7 @@
             document.getElementById("continueBtn").style.display = "none";
             document.getElementById("checkBtn").style.display = "inline-block";
             document.getElementById("skipBtn").style.display = "inline-block";
+            startTimer();
         }
         
         function checkSolution() {
@@ -57,6 +76,9 @@
             );
             
             if (correct) {
+                clearInterval(timerInterval);
+                score++;
+                document.getElementById("score").innerText = `Wynik: ${score}`;
                 document.getElementById("message").innerText = "🎉 Gratulacje! Poprawne rozwiązanie.";
                 document.getElementById("continueBtn").style.display = "inline-block";
                 document.getElementById("checkBtn").style.display = "none";
