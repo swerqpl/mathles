@@ -1,126 +1,131 @@
-import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+// Binary Conversion Game + Target Clicking Game + Random Mini-games
 
-const parseFraction = (input) => {
-  if (input.includes("/")) {
-    const [num, den] = input.split("/").map(Number);
-    return num / den;
-  }
-  return parseFloat(input);
-};
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+const binaryInput = document.getElementById("binaryInput");
+const feedback = document.getElementById("binaryFeedback");
 
-const highlightEquation = (equation, darkMode) => {
-  return equation.split("").map((char, index) => {
-    if (/[xy]/.test(char)) return <span key={index} style={{ color: "blue" }}>{char}</span>;
-    if (/[-]/.test(char)) return <span key={index} style={{ color: "red" }}>{char}</span>;
-    if (/[+:*]/.test(char)) return <span key={index} style={{ color: "green" }}>{char}</span>;
-    if (/[\/]/.test(char)) return <span key={index} style={{ color: "orange" }}>{char}</span>;
-    return char;
-  });
-};
+let currentGame = "binary";
+let decimalNumber;
+let targets = [];
+let score = 0;
 
-const generateEquation = (difficulty) => {
-  let a, b, c, d, x, y;
-  switch (difficulty) {
-    case "easy":
-      x = Math.floor(Math.random() * 10);
-      y = Math.floor(Math.random() * 10);
-      return { eq1: `x + y = ${x + y}`, solution: { x, y } };
-    case "medium":
-      a = Math.floor(Math.random() * 10) + 1;
-      b = Math.floor(Math.random() * 10) + 1;
-      x = (Math.random() * 10).toFixed(1);
-      y = (Math.random() * 10).toFixed(1);
-      return { eq1: `${a}x + ${b}y = ${a * x + b * y}`, solution: { x, y } };
-    case "hard":
-      a = Math.floor(Math.random() * 20) - 10;
-      b = Math.floor(Math.random() * 20) - 10;
-      c = Math.floor(Math.random() * 20) - 10;
-      d = Math.floor(Math.random() * 20) - 10;
-      x = (Math.random() * 20 - 10).toFixed(2);
-      y = (Math.random() * 20 - 10).toFixed(2);
-      return {
-        eq1: `${a}x + ${b}y = ${a * x + b * y}`,
-        eq2: `${c}x + ${d}y = ${c * x + d * y}`,
-        solution: { x, y },
-      };
-    default:
-      return {};
-  }
-};
-
-export default function EquationSolver() {
-  const [difficulty, setDifficulty] = useState("easy");
-  const [equation, setEquation] = useState(generateEquation("easy"));
-  const [userX, setUserX] = useState("");
-  const [userY, setUserY] = useState("");
-  const [score, setScore] = useState(0);
-  const [message, setMessage] = useState("");
-  const [darkMode, setDarkMode] = useState(false);
-  const [time, setTime] = useState(0);
-
-  useEffect(() => {
-    const timer = setInterval(() => setTime((t) => t + 1), 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const checkSolution = () => {
-    if (
-      parseFraction(userX) === parseFloat(equation.solution.x) &&
-      parseFraction(userY) === parseFloat(equation.solution.y)
-    ) {
-      setScore(score + 1);
-      setMessage("Gratulacje! Poprawne rozwiązanie.");
-    } else {
-      setMessage("Niepoprawne rozwiązanie. Spróbuj ponownie.");
+function startRandomGame() {
+    const games = ["binary", "target", "equation"];
+    currentGame = games[Math.floor(Math.random() * games.length)];
+    if (currentGame === "binary") {
+        startBinaryGame();
+    } else if (currentGame === "target") {
+        startTargetGame();
+    } else if (currentGame === "equation") {
+        startEquationGame();
     }
-  };
-
-  const nextEquation = () => {
-    setEquation(generateEquation(difficulty));
-    setUserX("");
-    setUserY("");
-    setMessage("");
-    setTime(0);
-  };
-
-  return (
-    <div className={`h-screen w-screen flex flex-col items-center justify-center ${darkMode ? "bg-gray-800 text-white" : "bg-white text-black"}`}>
-      <div className="p-4 flex justify-between w-full">
-        <h1 className="text-2xl">Rozwiąż układ równań</h1>
-        <button onClick={() => setDarkMode(!darkMode)}>Tryb Ciemny</button>
-      </div>
-      <Card className="w-full max-w-4xl p-4">
-        <CardContent>
-          <p>{highlightEquation(equation.eq1, darkMode)}</p>
-          {equation.eq2 && <p>{highlightEquation(equation.eq2, darkMode)}</p>}
-          <input
-            type="text"
-            className="w-full p-2 text-lg border-2 rounded-lg bg-transparent text-current"
-            placeholder="x (np. 3/4)"
-            value={userX}
-            onChange={(e) => setUserX(e.target.value)}
-          />
-          <input
-            type="text"
-            className="w-full p-2 text-lg border-2 rounded-lg bg-transparent text-current mt-2"
-            placeholder="y (np. 2 1/2)"
-            value={userY}
-            onChange={(e) => setUserY(e.target.value)}
-          />
-          <Button onClick={checkSolution} className="m-2">Sprawdź</Button>
-          <Button onClick={nextEquation} className="m-2">Skip</Button>
-        </CardContent>
-      </Card>
-      <p>Punkty: {score}</p>
-      <p>Czas: {time}s</p>
-      <p>{message}</p>
-      <div>
-        <Button onClick={() => setDifficulty("easy")} className="m-1">Łatwy</Button>
-        <Button onClick={() => setDifficulty("medium")} className="m-1">Średni</Button>
-        <Button onClick={() => setDifficulty("hard")} className="m-1">Trudny</Button>
-      </div>
-    </div>
-  );
 }
+
+// Binary Conversion Game
+function startBinaryGame() {
+    decimalNumber = Math.floor(Math.random() * 31) + 1;
+    binaryInput.placeholder = `Convert ${decimalNumber} to binary`;
+    feedback.innerText = "";
+}
+
+function checkBinary() {
+    const userAnswer = binaryInput.value;
+    const correctAnswer = decimalNumber.toString(2);
+    if (userAnswer === correctAnswer) {
+        feedback.innerText = "Correct!";
+        setTimeout(startRandomGame, 1000);
+    } else {
+        feedback.innerText = "Try again!";
+    }
+}
+
+// Target Clicking Game
+function startTargetGame() {
+    targets = [];
+    score = 0;
+    spawnTarget();
+}
+
+function spawnTarget() {
+    const target = {
+        x: Math.random() * (canvas.width - 20),
+        y: Math.random() * (canvas.height - 20),
+        radius: 15,
+    };
+    targets.push(target);
+    setTimeout(() => {
+        targets.shift();
+    }, 2000);
+}
+
+function drawTargets() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    targets.forEach(target => {
+        ctx.beginPath();
+        ctx.arc(target.x, target.y, target.radius, 0, Math.PI * 2);
+        ctx.fillStyle = "red";
+        ctx.fill();
+        ctx.closePath();
+    });
+}
+
+canvas.addEventListener("click", (event) => {
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = event.clientX - rect.left;
+    const mouseY = event.clientY - rect.top;
+    
+    targets = targets.filter(target => {
+        const dist = Math.sqrt((mouseX - target.x) ** 2 + (mouseY - target.y) ** 2);
+        if (dist < target.radius) {
+            score++;
+            console.log("Score:", score);
+            if (score >= 5) {
+                setTimeout(startRandomGame, 1000);
+            }
+            return false;
+        }
+        return true;
+    });
+});
+
+// Random Equation Game
+function startEquationGame() {
+    let a = Math.floor(Math.random() * 20) + 1;
+    let b = Math.floor(Math.random() * 20) + 1;
+    let operators = ['+', '-', '*', '/'];
+    let op = operators[Math.floor(Math.random() * operators.length)];
+    let equation, answer;
+
+    if (op === '/') {
+        answer = a;
+        a = a * b;
+    } else {
+        answer = eval(`${a} ${op} ${b}`);
+    }
+
+    if (!Number.isInteger(answer)) {
+        return startEquationGame(); // Regenerate if answer is not an integer
+    }
+    
+    let userAnswer = prompt(`Solve: ${a} ${op} ${b}`);
+    if (parseInt(userAnswer) === answer) {
+        alert("Correct!");
+        setTimeout(startRandomGame, 1000);
+    } else {
+        alert("Try again!");
+        startEquationGame();
+    }
+}
+
+function gameLoop() {
+    if (currentGame === "target") drawTargets();
+    requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
+setInterval(() => {
+    if (currentGame === "target") spawnTarget();
+}, 1000);
+
+startRandomGame();
